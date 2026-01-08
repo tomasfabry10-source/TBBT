@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TBBT: Mise Nobelovka 4.1</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Roboto:wght@400;700&display=swap');
+
+        :root {
+            --tbbt-red: #cc0000;
+            --tbbt-yellow: #ffcc00;
+            --tbbt-blue: #0066cc;
+            --panel-height: 35vh;
+            /* Proxy prefix pro obrázky */
+            --proxy: https://images.weserv.nl/?url=;
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Roboto', sans-serif; background: #000; }
+
+        /* --- STAGE --- */
+        #stage {
+            height: 65vh;
+            position: relative;
+            background-size: cover; background-position: center;
+            border-bottom: 5px solid black;
+            display: flex; justify-content: center; align-items: flex-end;
+            transition: background 0.5s; overflow: hidden;
+        }
+
+        /* Prostředí s Proxy */
+        .room-livingroom { background-image: url('https://images.weserv.nl/?url=https://m.media-amazon.com/images/I/81fP68uH8bL.jpg'); }
+        .room-penny { background-image: url('https://images.weserv.nl/?url=https://static.wikia.nocookie.net/bigbangtheory/images/5/5e/Penny%27s_Apartment.png'); }
+        .room-office { background-image: url('https://images.weserv.nl/?url=https://static.wikia.nocookie.net/bigbangtheory/images/a/a2/Sheldon%27s_Office.png'); }
+        .room-cheesecake { background-image: url('https://images.weserv.nl/?url=https://static.wikia.nocookie.net/bigbangtheory/images/2/2a/The_Cheesecake_Factory.png'); }
+        .room-escape { background-image: url('https://images.weserv.nl/?url=https://static.wikia.nocookie.net/bigbangtheory/images/a/a3/The_Checkmate_Manifesto.png'); filter: brightness(0.7); }
+        .room-nobel { background-image: url('https://images.weserv.nl/?url=https://static.wikia.nocookie.net/bigbangtheory/images/6/65/The_Stockholm_Syndrome_02.jpg'); }
+
+        /* Postavy s Proxy */
+        .character-container { display: flex; gap: 5px; margin-bottom: 5px; z-index: 2; height: 100%; align-items: flex-end; }
+        .char { width: 130px; height: 260px; background-size: contain; background-repeat: no-repeat; background-position: bottom; transition: 0.3s; }
+        
+        #sheldon { background-image: url('https://images.weserv.nl/?url=https://www.pngarts.com/files/3/Sheldon-Cooper-PNG-High-Quality-Image.png'); }
+        #leonard { background-image: url('https://images.weserv.nl/?url=https://vignette.wikia.nocookie.net/bigbangtheory/images/d/d1/Leonard_Hofstadter.png'); }
+        #guest1 { display: none; }
+        #guest2 { display: none; }
+
+        /* Publikum */
+        #audience-layer {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 50%;
+            background-image: url('https://images.weserv.nl/?url=https://www.pngmart.com/files/7/Audience-PNG-Transparent-Image.png');
+            background-size: cover; background-repeat: repeat-x;
+            z-index: 10; display: none; opacity: 0.8;
+            animation: audienceClap 0.5s infinite alternate ease-in-out;
+        }
+        @keyframes audienceClap { from { transform: translateY(15px); } to { transform: translateY(0); } }
+
+        /* Animace Sheldon */
+        .shake { animation: shake 0.15s infinite; }
+        @keyframes shake { 0% { transform: translate(3px, 3px); } 50% { transform: translate(-3px, -3px); } 100% { transform: translate(3px, -3px); } }
+        .flail { animation: flail 0.4s infinite; filter: hue-rotate(300deg); }
+        @keyframes flail { 0% { transform: scale(1); } 50% { transform: scale(1.1) rotate(5deg); } }
+
+        /* Mezihry */
+        #minigame-container { display: none; position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 4px solid var(--tbbt-yellow); padding: 20px; z-index: 20; color: white; text-align: center; border-radius: 15px; width: 320px; }
+        .puzzle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+        .puzzle-btn { width: 60px; height: 60px; border: 2px solid white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; }
+        
+        .flying-comic {
+            position: absolute; width: 60px; height: 80px;
+            background-image: url('https://images.weserv.nl/?url=https://cdn-icons-png.flaticon.com/512/226/226231.png');
+            background-size: cover; cursor: pointer; top: -100px; z-index: 15;
+        }
+
+        /* UI PANEL */
+        #ui-panel { height: var(--panel-height); background: white; border-top: 5px solid black; display: flex; flex-direction: column; }
+        .status-bar { display: flex; justify-content: space-between; padding: 10px 20px; background: #f0f0f0; border-bottom: 3px solid black; font-family: 'Bangers'; font-size: 1.2rem; }
+        #content-area { padding: 15px; flex-grow: 1; overflow-y: auto; }
+        .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .choice-btn { padding: 12px; background: var(--tbbt-blue); color: white; border: 3px solid black; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 4px 4px 0 black; }
+        .choice-btn:hover { background: #004488; transform: translate(-2px, -2px); }
+
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 100; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body class="room-livingroom">
+
+<div id="stage">
+    <div id="audience-layer"></div>
+    <div id="minigame-container">
+        <h2 id="minigame-title">ÚKOL</h2>
+        <p id="minigame-desc"></p>
+        <div id="puzzle-box" class="puzzle-grid"></div>
+    </div>
+    <div class="character-container">
+        <div id="leonard" class="char"></div>
+        <div id="guest1" class="char"></div>
+        <div id="sheldon" class="char"></div>
+        <div id="guest2" class="char"></div>
+    </div>
+</div>
+
+<div id="ui-panel">
+    <div class="status-bar">
+        <div>MOOD: <span id="mood-text">VYNIKAJÍCÍ</span></div>
+        <div id="day-display">DEN 1: Pondělí</div>
+        <div id="stat-display">SKÓRE: 0</div>
+    </div>
+    <div id="content-area">
+        <div id="scenario-text" style="font-size: 1.1rem; margin-bottom: 15px; font-weight: bold;"></div>
+        <div id="choices-box" class="choices-grid"></div>
+    </div>
+</div>
+
+<div id="overlay">
+    <h1 id="over-title">BAZINGA!</h1>
+    <p id="over-msg" style="font-size: 1.3rem; margin: 20px 0; max-width: 700px;"></p>
+    <button class="choice-btn" style="background: var(--tbbt-red); width: 220px;" onclick="nextStep()">POKRAČOVAT</button>
+</div>
+
+<script>
+    const proxy = "https://images.weserv.nl/?url=";
+    const chars = {
+        penny: proxy + "https://vignette.wikia.nocookie.net/bigbangtheory/images/d/d2/Penny.png",
+        howard: proxy + "https://vignette.wikia.nocookie.net/bigbangtheory/images/a/a3/Howard_Wolowitz.png",
+        bernadette: proxy + "https://vignette.wikia.nocookie.net/bigbangtheory/images/4/4c/Bernadette_Rostenkowski-Wolowitz.png",
+        amy: proxy + "https://vignette.wikia.nocookie.net/bigbangtheory/images/d/df/Amy_Farrah_Fowler.png",
+        raj: proxy + "https://vignette.wikia.nocookie.net/bigbangtheory/images/5/53/Rajesh_Koothrappali.png"
+    };
+
+    const state = { mood: 100, correct: 0, wrong: 0, currentIdx: 0, day: 1, gameInterval: null, caughtComics: 0 };
+
+    const scenarios = [
+        { day: 1, room: "room-livingroom", text: "Pondělí. Sheldon se dožaduje své ovesné kaše, ale Howard mu do ní nasypal borůvky místo rozinek.", guests: ["howard"],
+          choices: [
+              { txt: "Howard udělal chybu, jdi to vyměnit.", mood: +15, score: 1, feedback: "Sheldon: 'Aspoň někdo v tomto domě má úctu k rituálům. Inženýr u mě skončil.'" },
+              { txt: "Borůvky jsou zdravější.", mood: -30, score: 0, feedback: "Sheldon: 'Zdravější? Já chci řád, ne vitamíny! Moje DNA pláče!'" }
+          ]
+        },
+        { type: "minigame", subType: "numbers", text: "ÚNIKOVKA: Howard tě zamkl v kanceláři! Rychle seřaď čísla 1-6!", room: "room-escape", guests: ["howard"] },
+        { day: 2, room: "room-cheesecake", text: "U Penny v práci. Bernadette křičí na Howarda a Sheldon se snaží vypočítat spropitné na 4 desetinná místa.", guests: ["penny", "bernadette"],
+          choices: [
+              { txt: "Pomoct Sheldonovi s výpočtem.", mood: +20, score: 1, feedback: "Sheldon: 'Děkuji, Leonarde. Dnes ti to myslí téměř jako průměrnému třeťákovi na MIT.'" },
+              { txt: "Spropitné jen tak odhadnout.", mood: -25, score: 0, feedback: "Bernadette: 'Takhle to u nás nefunguje!' Sheldon se začíná třást odporem k nepřesnosti." }
+          ]
+        },
+        { type: "minigame", subType: "catching", text: "MEZIHRA: Stuartovi v obchodě spadla police! Chyť 10 komiksů, než se dotknou země!", room: "room-office", guests: ["raj"] },
+        { day: 4, room: "room-penny", text: "ČTVRTEK! Anything Can Happen! Penny přinesla víno a chce hrát Twister.", guests: ["penny", "raj"],
+          choices: [
+              { txt: "Hrát Twister podle Sheldonových pravidel.", mood: +20, score: 1, feedback: "Sheldon vyvinul strategii 'Nulového dotyku'. Bazinga!" },
+              { txt: "Odmítnout s tím, že čtvrtek je den pro Halo.", mood: -30, score: 0, feedback: "Sheldon: 'Dnes se má dít COKOLI a ty navrhuješ Halo? Jsi tak předvídatelný!'" }
+          ]
+        },
+        { day: 7, room: "room-nobel", text: "FINÁLE: Amy a Sheldon stojí před komisí. Leonard musí doplnit finální vzorec Nobelovky: $$F = \dots$$", guests: ["amy"], isFinale: true,
+          choices: [
+              { txt: "m * a", mood: +100, score: 5, feedback: "Správně! Superasymetrie potvrzena! Publikum tleská!" },
+              { txt: "m * c^2", mood: -50, score: 0, feedback: "To je Einstein, ne superasymetrie! Sheldon je zklamán tvou povrchností." }
+          ]
+        }
+    ];
+
+    function updateUI() {
+        const moodNames = ["KATASTROFA", "KRITICKÁ", "ŠPATNÁ", "DOBRÁ", "VYNIKAJÍCÍ"];
+        const moodIdx = Math.min(4, Math.floor(state.mood / 21));
+        document.getElementById('mood-text').innerText = moodNames[moodIdx];
+        document.getElementById('mood-text').style.color = state.mood < 40 ? 'red' : 'green';
+        document.getElementById('day-display').innerText = `DEN ${state.day}`;
+        document.getElementById('stat-display').innerText = `SKÓRE: ${state.correct}`;
+    }
+
+    function loadScenario() {
+        if (state.currentIdx >= scenarios.length) { finishGame(); return; }
+        const s = scenarios[state.currentIdx];
+        document.body.className = s.room;
+        document.getElementById('audience-layer').style.display = 'none';
+
+        const g1 = document.getElementById('guest1'); const g2 = document.getElementById('guest2');
+        g1.style.display = g2.style.display = "none";
+        if (s.guests) {
+            if (s.guests[0]) { g1.style.backgroundImage = `url(${chars[s.guests[0]]})`; g1.style.display = "block"; }
+            if (s.guests[1]) { g2.style.backgroundImage = `url(${chars[s.guests[1]]})`; g2.style.display = "block"; }
+        }
+
+        if (s.type === "minigame") startMinigame(s);
+        else {
+            document.getElementById('minigame-container').style.display = "none";
+            document.getElementById('scenario-text').innerText = s.text;
+            const box = document.getElementById('choices-box'); box.innerHTML = '';
+            s.choices.forEach(c => {
+                const btn = document.createElement('button'); btn.className = 'choice-btn'; btn.innerText = c.txt;
+                btn.onclick = () => handleChoice(c, s.isFinale); box.appendChild(btn);
+            });
+        }
+        updateUI();
+    }
+
+    function handleChoice(c, isFinale) {
+        if (c.score > 0) state.correct += c.score; else state.wrong++;
+        state.mood = Math.max(0, Math.min(100, state.mood + c.mood));
+        if (c.mood < 0) { document.getElementById('stage').classList.add('shake'); document.getElementById('sheldon').classList.add('flail'); }
+        
+        if (isFinale && c.score > 0) {
+            document.getElementById('audience-layer').style.display = 'block';
+            setTimeout(() => showOverlay("NOBELOVA CENA!", c.feedback), 1500);
+        } else {
+            showOverlay(c.mood < 0 ? "BAZINGA!" : "VÝBORNĚ!", c.feedback);
+        }
+    }
+
+    function startMinigame(s) {
+        const mCont = document.getElementById('minigame-container');
+        const pBox = document.getElementById('puzzle-box');
+        mCont.style.display = "block"; pBox.innerHTML = '';
+        document.getElementById('minigame-desc').innerText = s.text;
+
+        if (s.subType === "numbers") {
+            let current = 1; document.getElementById('minigame-title').innerText = "ÚNIK";
+            [1,2,3,4,5,6].sort(()=>Math.random()-0.5).forEach(n => {
+                const b = document.createElement('div'); b.className = 'puzzle-btn'; b.innerText = n; b.style.background = "var(--tbbt-blue)";
+                b.onclick = () => { if(n===current){b.style.visibility="hidden";current++;if(current>6)endMinigame();}else{state.mood-=5;updateUI();} };
+                pBox.appendChild(b);
+            });
+        } else if (s.subType === "catching") {
+            document.getElementById('minigame-title').innerText = "Stuartův pád";
+            mCont.style.display = "none"; state.caughtComics = 0;
+            document.getElementById('scenario-text').innerText = "Chyť 10 padajících komiksů!";
+            state.gameInterval = setInterval(() => { if(state.caughtComics >= 10) endMinigame(); else spawnComic(); }, 800);
+        }
+    }
+
+    function spawnComic() {
+        const comic = document.createElement('div');
+        comic.className = 'flying-comic';
+        comic.style.left = Math.random() * (window.innerWidth - 70) + 'px';
+        document.getElementById('stage').appendChild(comic);
+        let pos = -100;
+        const fall = setInterval(() => {
+            pos += 4; comic.style.top = pos + 'px';
+            if (pos > window.innerHeight * 0.6) { clearInterval(fall); comic.remove(); state.mood -= 5; updateUI(); }
+        }, 20);
+        comic.onclick = () => { clearInterval(fall); comic.remove(); state.caughtComics++; 
+            document.getElementById('scenario-text').innerText = `Chyceno: ${state.caughtComics}/10`;
+            if(state.caughtComics >= 10) endMinigame();
+        };
+    }
+
+    function endMinigame() {
+        clearInterval(state.gameInterval);
+        document.querySelectorAll('.flying-comic').forEach(c => c.remove());
+        document.getElementById('minigame-container').style.display = "none";
+        state.correct++; showOverlay("HOTOVO!", "Sheldon: 'Tvé reflexy jsou skoro tak rychlé jako u průměrného primáta.'");
+    }
+
+    function showOverlay(t, m) {
+        document.getElementById('over-title').innerText = t;
+        document.getElementById('over-msg').innerText = m;
+        document.getElementById('overlay').style.display = "flex";
+    }
+
+    function nextStep() {
+        document.getElementById('overlay').style.display = "none";
+        document.getElementById('stage').classList.remove('shake');
+        document.getElementById('sheldon').classList.remove('flail');
+        state.currentIdx++; if (state.currentIdx % 3 === 0) state.mood = 100;
+        state.day = Math.min(7, state.day + 1);
+        loadScenario();
+    }
+
+    function finishGame() {
+        const perc = Math.round((state.correct / (scenarios.length + 5)) * 100);
+        showOverlay("KONEC HRY", `Seriál znáš na ${perc}%! Sheldon a Amy získali Nobelovku! BAZINGA!`);
+        document.querySelector('#overlay button').onclick = () => location.reload();
+    }
+
+    loadScenario();
+</script>
+
+</body>
+</html>
